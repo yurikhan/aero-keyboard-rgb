@@ -7,7 +7,7 @@ from functools import wraps
 from pathlib import Path
 import struct
 from time import sleep
-from typing import Callable, Dict, List, Literal, NamedTuple, Optional, Type, TypeVar
+from typing import Callable, Dict, List, Literal, NamedTuple, Optional, Type, TypeVar, cast
 
 
 class Kind(IntEnum):
@@ -64,7 +64,7 @@ class Report(NamedTuple):
 
 class AeroKeyboard:
     def __init__(self, vendor_id: int = 0x1044, product_id: int = 0x7a3b) -> None:
-        import hidapi
+        import hidapi  # type: ignore
         # HACKERY: hidapi imports hidapi-libusb first,
         # and we’d like to avoid that
         # because that one unbinds devices when they are opened.
@@ -141,10 +141,11 @@ class RGB(NamedTuple):
 
 
 def pack_rgb(data: Dict[KeyName, RGB]) -> bytes:
-    return b''.join(bytes(data.get(k, b'\0\0\0\0')) for k in KEYS)
+    return b''.join(bytes(cast(Dict[Optional[KeyName], RGB], data).get(k, b'\0\0\0\0'))
+                    for k in KEYS)
 
 
-T = TypeVar('T')
+T = TypeVar('T', bound=IntEnum)
 
 
 def parse_enum(enum: Type[T]) -> Callable[[str], T]:
